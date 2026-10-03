@@ -2,16 +2,6 @@ import React, { useState } from 'react';
 import { useWallet } from '../context/WalletContext';
 import { sound } from '../utils/audio';
 
-interface DeployGraftProps {
-  onDeploySuccess: (newSpore: {
-    name: string;
-    symbol: string;
-    hostSymbol: string;
-    initialBuySol: number;
-    spriteUrl?: string;
-  }) => void;
-}
-
 const PRESET_SPRITES = [
   {
     name: 'Neon Spore',
@@ -27,8 +17,8 @@ const PRESET_SPRITES = [
   },
 ];
 
-export const DeployGraftSection: React.FC<DeployGraftProps> = ({ onDeploySuccess }) => {
-  const { wallet, executeTransferOrBurn, setOpenWalletModal } = useWallet();
+export const DeployGraftSection: React.FC = () => {
+  const { wallet } = useWallet();
 
   const [selectedHost, setSelectedHost] = useState('$CASHCAT');
   const [customMintAddress, setCustomMintAddress] = useState('');
@@ -37,45 +27,9 @@ export const DeployGraftSection: React.FC<DeployGraftProps> = ({ onDeploySuccess
   const [devBuyPercent, setDevBuyPercent] = useState<number>(10);
   const [customSolAmount, setCustomSolAmount] = useState<string>('0.5');
   const [selectedSpriteIndex, setSelectedSpriteIndex] = useState(0);
-  const [isDeploying, setIsDeploying] = useState(false);
-  const [deploySuccessMessage, setDeploySuccessMessage] = useState<string | null>(null);
-
-  const baseDeployFee = 0.050; // Solana account rent 0.024 + Meteora 0.026
+  const baseDeployFee = 0.050;
   const botanistSol = parseFloat(customSolAmount) || 0;
   const totalRequiredSol = baseDeployFee + botanistSol;
-
-  const handleDeploy = async () => {
-    if (!wallet.isConnected) {
-      sound.playBip(500);
-      setOpenWalletModal(true);
-      return;
-    }
-
-    if (!specimenName || !specimenTicker) {
-      alert('Please enter specimen name and ticker symbol.');
-      return;
-    }
-
-    setIsDeploying(true);
-    sound.playBurn();
-
-    const success = await executeTransferOrBurn(totalRequiredSol, selectedHost);
-    if (success) {
-      sound.playGraft();
-      const newSpore = {
-        name: specimenName,
-        symbol: specimenTicker.startsWith('$') ? specimenTicker : `$${specimenTicker}`,
-        hostSymbol: selectedHost,
-        initialBuySol: botanistSol,
-        spriteUrl: PRESET_SPRITES[selectedSpriteIndex]?.url,
-      };
-
-      onDeploySuccess(newSpore);
-      setDeploySuccessMessage(`Specimen ${newSpore.symbol} successfully inoculated into ${selectedHost} host tree!`);
-      setTimeout(() => setDeploySuccessMessage(null), 5000);
-    }
-    setIsDeploying(false);
-  };
 
   return (
     <section className="w-full mb-8" id="graft-form">
@@ -97,18 +51,6 @@ export const DeployGraftSection: React.FC<DeployGraftProps> = ({ onDeploySuccess
 
         {/* Lab Form Contents */}
         <div className="p-4 sm:p-6">
-          {deploySuccessMessage && (
-            <div className="mb-4 p-3 bg-[#50fd9f] text-[#00210f] border-2 border-[#1f182a] font-mono text-xs font-bold flex items-center justify-between">
-              <span>🌱 {deploySuccessMessage}</span>
-              <button
-                onClick={() => setDeploySuccessMessage(null)}
-                className="text-xs uppercase underline cursor-pointer"
-              >
-                DISMISS
-              </button>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             {/* Left Column: Parameters */}
             <div className="flex flex-col gap-4 font-mono">
@@ -245,7 +187,7 @@ export const DeployGraftSection: React.FC<DeployGraftProps> = ({ onDeploySuccess
               {/* Estimated Deploy Stats */}
               <div className="bg-[#eadef7] border-2 border-[#1f182a] p-3 text-xs">
                 <span className="text-[#5a3f46] uppercase block mb-1.5 font-bold">
-                  DEPLOYMENT LEDGER SUMMARY
+                  PLACEHOLDER COST PREVIEW — NOT A LIVE QUOTE
                 </span>
                 <div className="flex justify-between py-1 border-b border-[#1f182a]/20">
                   <span>Solana Account Rent:</span>
@@ -272,17 +214,19 @@ export const DeployGraftSection: React.FC<DeployGraftProps> = ({ onDeploySuccess
           {/* Terminal Submit CTA */}
           <button
             type="button"
-            disabled={isDeploying}
-            onClick={handleDeploy}
+            disabled
             className="w-full bg-[#df1871] hover:bg-[#b60059] text-white border-2 border-[#1f182a] py-3 font-['Space_Grotesk'] text-base sm:text-lg uppercase font-bold tracking-wider shadow-[4px_4px_0px_#1f182a] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 active:shadow-none transition-none flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <span className="material-symbols-outlined">flare</span>
             <span>
-              {isDeploying
-                ? 'Broadcasting Inoculation Tx to Solana...'
-                : `Inoculate & Deploy Graft (Est. ${totalRequiredSol.toFixed(3)} SOL)`}
+              {wallet.isConnected
+                ? 'Deployment Unavailable — On-Chain Program Not Configured'
+                : 'Connect Wallet — Deployment Unavailable'}
             </span>
           </button>
+          <p className="mt-2 text-center font-mono text-[10px] text-[#5a3f46]">
+            No SOL will be sent and no token will be created by this preview.
+          </p>
         </div>
       </div>
     </section>

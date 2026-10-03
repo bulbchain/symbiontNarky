@@ -9,7 +9,6 @@ export const WalletDrawer: React.FC = () => {
     openWalletModal,
     setOpenWalletModal,
     connectPhantom,
-    connectSimulator,
     disconnect,
     signAuthMessage,
     isConnecting,
@@ -81,7 +80,7 @@ export const WalletDrawer: React.FC = () => {
           {!wallet.isConnected ? (
             <div className="space-y-4">
               <p className="text-[#5a3f46] leading-relaxed">
-                Connect your Solana Phantom wallet to manage mutualistic spore assets, sign biological authentication receipts, and inoculate new host bonding curves.
+                Connect Phantom to read your Solana public key and live SOL balance. Swaps, transfers, burns, pledges, and deployments are unavailable until their on-chain programs are configured.
               </p>
 
               {/* Connect via Phantom button */}
@@ -102,22 +101,6 @@ export const WalletDrawer: React.FC = () => {
                 </span>
               </button>
 
-              {/* Autonomous Simulator option */}
-              <div className="bg-[#faf0ff] border-2 border-[#1f182a] p-3 text-center">
-                <span className="text-[10px] text-[#5a3f46] uppercase font-bold block mb-1">
-                  Testing Without Phantom Extension?
-                </span>
-                <p className="text-[11px] text-[#1f182a] mb-2">
-                  Launch in Autonomous Bio-Simulator Mode with 14.85 test SOL &amp; preloaded spore specimens.
-                </p>
-                <button
-                  onClick={connectSimulator}
-                  className="px-4 py-2 bg-[#ffffff] hover:bg-[#50fd9f] hover:text-[#00210f] border-2 border-[#1f182a] font-mono text-xs font-bold uppercase shadow-[2px_2px_0px_#1f182a] active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
-                >
-                  🚀 Launch Bio-Autonomous Keystore
-                </button>
-              </div>
-
               {!wallet.isPhantomInstalled && (
                 <div className="text-center font-mono text-[10px] text-[#5a3f46]">
                   Don&apos;t have Phantom?{' '}
@@ -133,7 +116,7 @@ export const WalletDrawer: React.FC = () => {
               )}
             </div>
           ) : (
-            /* Connected View: Full Crypto Asset Management */
+            /* Connected View */
             <div className="space-y-4">
               {/* Account Information Card */}
               <div className="bg-[#faf0ff] border-2 border-[#1f182a] p-3 sm:p-4 space-y-2">
@@ -141,7 +124,7 @@ export const WalletDrawer: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#006d3d] inline-block animate-ping"></span>
                     <span className="font-bold uppercase text-[10px] text-[#006d3d]">
-                      {wallet.isSimulator ? 'BIO-AUTONOMOUS KEYSTORE' : 'PHANTOM CONNECTED'}
+                      PHANTOM CONNECTED
                     </span>
                   </div>
                   <span className="text-[9px] bg-[#352d40] text-[#5affa3] px-2 py-0.5 font-bold uppercase border border-[#1f182a]">
@@ -167,72 +150,30 @@ export const WalletDrawer: React.FC = () => {
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-[#5a3f46] font-bold">SOL Balance:</span>
                   <span className="font-['Space_Grotesk'] text-base font-bold text-[#1f182a]">
-                    {wallet.balanceSol.toFixed(4)} SOL
+                    {wallet.balanceSol === null ? 'Unavailable' : `${wallet.balanceSol.toFixed(4)} SOL`}
                   </span>
                 </div>
               </div>
 
-              {/* Symbiont Token Portfolio */}
-              <div className="space-y-2">
-                <span className="text-xs uppercase font-bold text-[#1f182a] block">
-                  Symbiont Spore Asset Portfolio
-                </span>
-                <div className="bg-[#ffffff] border-2 border-[#1f182a] divide-y divide-[#1f182a]/20">
-                  {Object.entries(wallet.tokenBalances).map(([sym, qty]) => (
-                    <div
-                      key={sym}
-                      className="p-2.5 flex items-center justify-between hover:bg-[#faf0ff]"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#df1871]" />
-                        <span className="font-bold text-[#1f182a]">{sym}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold block text-[#1f182a]">
-                          {qty.toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-[#5a3f46]">Custodied</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Protocol Impact & Burn Stats */}
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="bg-[#ffd9e1] border-2 border-[#1f182a] p-2.5">
-                  <span className="text-[9px] text-[#8f0045] uppercase font-bold block">
-                    Host Scorched by You
-                  </span>
-                  <span className="font-['Space_Grotesk'] text-sm sm:text-base font-bold text-[#b60059]">
-                    ${wallet.totalBurntUsd.toFixed(2)} USD
-                  </span>
-                </div>
-                <div className="bg-[#f0e3fd] border-2 border-[#1f182a] p-2.5">
-                  <span className="text-[9px] text-[#4719c9] uppercase font-bold block">
-                    Colony Rank
-                  </span>
-                  <span className="font-['Space_Grotesk'] text-sm sm:text-base font-bold text-[#5d3ade]">
-                    Botanist #042
-                  </span>
-                </div>
+              <div className="bg-[#faf0ff] border-2 border-[#1f182a] p-3 text-[10px] text-[#5a3f46]">
+                Only the native SOL balance is read from Solana. Token holdings and protocol activity are not connected to an indexer.
               </div>
 
               {/* Cryptographic SIWS Authentication */}
               <div className="bg-[#ffffff] border-2 border-[#1f182a] p-3 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] text-[#5a3f46] uppercase font-bold">
-                    Cryptographic Colony Authentication
+                    Phantom Message Signature
                   </span>
                   {wallet.authSignature && (
                     <span className="text-[9px] bg-[#50fd9f] text-[#00210f] px-1.5 py-0.2 font-bold uppercase border border-[#1f182a]">
-                      VERIFIED
+                      SIGNED
                     </span>
                   )}
                 </div>
 
                 <p className="text-[10px] text-[#5a3f46]">
-                  Sign a challenge message to verify on-chain Botanist credentials without spending gas.
+                  Sign a message with Phantom without spending gas. This app does not currently verify signatures on a server.
                 </p>
 
                 {wallet.authSignature ? (

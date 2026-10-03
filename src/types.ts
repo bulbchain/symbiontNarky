@@ -70,10 +70,7 @@ export interface LiveActivityItem {
 export interface UserWalletState {
   isConnected: boolean;
   publicKey: string | null;
-  balanceSol: number;
+  balanceSol: number | null;
   isPhantomInstalled: boolean;
-  isSimulator: boolean;
   authSignature: string | null;
-  tokenBalances: { [symbol: string]: number };
-  totalBurntUsd: number;
 }

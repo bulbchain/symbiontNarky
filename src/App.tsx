@@ -20,8 +20,8 @@ import { sound } from './utils/audio';
 function AppContent() {
   const [currentTab, setCurrentTab] = useState<'how-it-feeds' | 'spore-register' | 'graft-a-host' | 'colony-live-feed'>('how-it-feeds');
   const [hosts, setHosts] = useState<HostSpecimen[]>(INITIAL_HOSTS);
-  const [incubatingHosts, setIncubatingHosts] = useState<IncubatingHost[]>(INITIAL_INCUBATING_HOSTS);
-  const [liveActivity, setLiveActivity] = useState<LiveActivityItem[]>(INITIAL_LIVE_ACTIVITY);
+  const [incubatingHosts] = useState<IncubatingHost[]>(INITIAL_INCUBATING_HOSTS);
+  const [liveActivity] = useState<LiveActivityItem[]>(INITIAL_LIVE_ACTIVITY);
 
   // Modals
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
@@ -47,98 +47,6 @@ function AppContent() {
         el.scrollIntoView({ behavior: 'smooth' });
       }
     }, 100);
-  };
-
-  // When a user successfully inoculates & deploys a new graft
-  const handleDeploySuccess = (newSpore: {
-    name: string;
-    symbol: string;
-    hostSymbol: string;
-    initialBuySol: number;
-    spriteUrl?: string;
-  }) => {
-    // Add to hosts attachedSpores
-    setHosts(prevHosts =>
-      prevHosts.map(host => {
-        if (host.symbol === newSpore.hostSymbol) {
-          const updatedSpores = [
-            ...host.attachedSpores,
-            {
-              id: `spore-${Date.now()}`,
-              name: newSpore.name,
-              symbol: newSpore.symbol,
-              hostSymbol: newSpore.hostSymbol,
-              change24h: 12.5,
-              priceUsd: 0.001,
-              percentageBurnContribution: 10,
-              isCustom: true,
-            },
-          ];
-          return {
-            ...host,
-            attachedCount: host.attachedCount + 1,
-            attachedSpores: updatedSpores,
-          };
-        }
-        return host;
-      })
-    );
-
-    // Add event to live activity feed
-    const graftEvent: LiveActivityItem = {
-      id: `graft-${Date.now()}`,
-      type: 'GRAFT',
-      tokenAmount: `NEW SPORE #${hosts.length * 10 + Math.floor(Math.random() * 9)}`,
-      tokenSymbol: `[${newSpore.symbol}]`,
-      hostSymbol: newSpore.hostSymbol,
-      burntAmount: '0.05 SOL',
-      burntSymbol: 'INIT',
-      txHash: '1Ac7...q6wV',
-      timestamp: Date.now(),
-      initSol: '0.05 SOL',
-    };
-    setLiveActivity(prev => [graftEvent, ...prev]);
-  };
-
-  // When a user swaps tokens
-  const handleSwapSuccess = (item: {
-    type: 'BUY';
-    tokenAmount: string;
-    tokenSymbol: string;
-    hostSymbol: string;
-    burntAmount: string;
-    burntSymbol: string;
-  }) => {
-    const newItem: LiveActivityItem = {
-      id: `tx-${Date.now()}`,
-      type: item.type,
-      tokenAmount: item.tokenAmount,
-      tokenSymbol: item.tokenSymbol,
-      hostSymbol: item.hostSymbol,
-      burntAmount: item.burntAmount,
-      burntSymbol: item.burntSymbol,
-      txHash: '8Jz4...p7qX',
-      timestamp: Date.now(),
-    };
-    setLiveActivity(prev => [newItem, ...prev]);
-  };
-
-  // When a user pledges gas to an incubating chamber
-  const handlePledgeSuccess = (hostId: string) => {
-    setIncubatingHosts(prev =>
-      prev.map(h => {
-        if (h.id === hostId) {
-          const newCount = Math.min(h.totalSignatures, h.signaturesCount + 1);
-          return {
-            ...h,
-            signaturesCount: newCount,
-            isReady: newCount >= h.totalSignatures,
-            estLaunchTime: newCount >= h.totalSignatures ? 'INOCULATION READY' : h.estLaunchTime,
-          };
-        }
-        return h;
-      })
-    );
   };
 
   // When a user tests or simulates spore burn boosting in the progression dossier
@@ -227,7 +135,7 @@ function AppContent() {
             />
 
             {/* Section 5: Deploy Graft Form */}
-            <DeployGraftSection onDeploySuccess={handleDeploySuccess} />
+            <DeployGraftSection />
 
             {/* Section 6: Live Activity Feed */}
             <LiveFeedSection initialItems={liveActivity} />
@@ -260,11 +168,11 @@ function AppContent() {
                 Graft a Host Specimen
               </h1>
               <p className="font-mono text-xs sm:text-sm text-[#5a3f46] mt-1">
-                Deploy your own parasite bonding curve onto any Solana SPL token pool. Programmatic 1% fees are harvested and incinerated irreversibly on every transaction.
+                Configure a graft deployment preview. Creating tokens and bonding curves is disabled until the audited Solana program and deployment service are configured.
               </p>
             </div>
 
-            <DeployGraftSection onDeploySuccess={handleDeploySuccess} />
+            <DeployGraftSection />
           </div>
         )}
 
@@ -279,7 +187,7 @@ function AppContent() {
                 Colony Live Transaction Stream
               </h1>
               <p className="font-mono text-xs sm:text-sm text-[#5a3f46] mt-1">
-                Real-time on-chain replication events across Jupiter DBC routes, automated token burns, and initial botanist inoculations.
+                Sample activity feed. Live on-chain transaction indexing has not been configured.
               </p>
             </div>
 
@@ -296,13 +204,11 @@ function AppContent() {
         onClose={() => setIsSwapModalOpen(false)}
         defaultHost={swapTarget.host}
         defaultSpore={swapTarget.spore}
-        onSwapSuccess={handleSwapSuccess}
       />
 
       <PledgeGasModal
         host={selectedIncubating}
         onClose={() => setSelectedIncubating(null)}
-        onPledgeSuccess={handlePledgeSuccess}
       />
 
       <EcosystemDocsModal

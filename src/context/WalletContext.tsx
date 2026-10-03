@@ -7,9 +7,9 @@ interface PhantomProvider {
   publicKey?: { toString: () => string };
   connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
   disconnect: () => Promise<void>;
-  signMessage: (message: Uint8Array, encoding: string) => Promise<{ signature: Uint8Array }>;
+  signMessage?: (message: Uint8Array, encoding: string) => Promise<{ signature: Uint8Array }>;
   on: (event: string, callback: (args: unknown) => void) => void;
-  request: (args: { method: string; params?: unknown }) => Promise<unknown>;
+  off?: (event: string, callback: (args: unknown) => void) => void;
 }
 
 declare global {
@@ -25,226 +25,253 @@ interface WalletContextType {
   wallet: UserWalletState;
   isConnecting: boolean;
   connectPhantom: () => Promise<boolean>;
-  connectSimulator: () => void;
   disconnect: () => Promise<void>;
   signAuthMessage: () => Promise<string | null>;
-  executeTransferOrBurn: (amountSol: number, hostSymbol?: string) => Promise<boolean>;
-  addTokens: (symbol: string, amount: number) => void;
   openWalletModal: boolean;
   setOpenWalletModal: (open: boolean) => void;
   statusMessage: string | null;
   clearStatusMessage: () => void;
 }
 
-const DEFAULT_SIMULATOR_WALLET: UserWalletState = {
+const EMPTY_WALLET: UserWalletState = {
   isConnected: false,
   publicKey: null,
-  balanceSol: 14.85,
+  balanceSol: null,
   isPhantomInstalled: false,
-  isSimulator: false,
   authSignature: null,
-  tokenBalances: {
-    '$SPORE': 48500,
-    '$CASH-CLAW': 12000,
-    '$STONK-HYPHA': 3400,
-    '$PIP-AGENT': 820,
-    '$POP-OAT': 1850,
-  },
-  totalBurntUsd: 1240.50,
 };
+
+const SOLANA_RPC_URL =
+  import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [wallet, setWallet] = useState<UserWalletState>(() => {
-    const saved = localStorage.getItem('symbiont_wallet_session');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return DEFAULT_SIMULATOR_WALLET;
-      }
-    }
-    return DEFAULT_SIMULATOR_WALLET;
+async function fetchSolBalance(publicKey: string): Promise<number> {
+  const response = await fetch(SOLANA_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'getBalance',
+      params: [publicKey, { commitment: 'confirmed' }],
+    }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Solana RPC returned HTTP ${response.status}.`);
+  }
+
+  const payload: unknown = await response.json();
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('Solana RPC returned an invalid response.');
+  }
+
+  if ('error' in payload) {
+    const rpcError = payload.error;
+    const message =
+      typeof rpcError === 'object' && rpcError !== null && 'message' in rpcError
+        ? rpcError.message
+        : null;
+    throw new Error(typeof message === 'string' ? message : 'Solana RPC balance request failed.');
+  }
+
+  if (!('result' in payload) || typeof payload.result !== 'object' || payload.result === null) {
+    throw new Error('Solana RPC response did not include a balance.');
+  }
+
+  const lamports = 'value' in payload.result ? payload.result.value : null;
+  if (typeof lamports !== 'number' || !Number.isFinite(lamports) || lamports < 0) {
+    throw new Error('Solana RPC returned an invalid balance.');
+  }
+
+  return lamports / 1_000_000_000;
+}
+
+export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [wallet, setWallet] = useState<UserWalletState>(EMPTY_WALLET);
   const [isConnecting, setIsConnecting] = useState(false);
   const [openWalletModal, setOpenWalletModal] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Check if Phantom is installed
-  useEffect(() => {
-    const checkPhantom = () => {
-      const provider = window.phantom?.solana || window.solana;
-      const isInstalled = !!(provider && provider.isPhantom);
-      setWallet(prev => ({ ...prev, isPhantomInstalled: isInstalled }));
-    };
-
-    checkPhantom();
-    window.addEventListener('load', checkPhantom);
-    return () => window.removeEventListener('load', checkPhantom);
+  const getPhantomProvider = useCallback((): PhantomProvider | null => {
+    if (window.phantom?.solana?.isPhantom) return window.phantom.solana;
+    if (window.solana?.isPhantom) return window.solana;
+    return null;
   }, []);
 
-  // Save wallet state to localStorage
+  const updateConnectedWallet = useCallback(async (publicKey: string) => {
+    setWallet(previous => ({
+      ...previous,
+      isConnected: true,
+      isPhantomInstalled: true,
+      publicKey,
+      balanceSol: null,
+      authSignature: previous.publicKey === publicKey ? previous.authSignature : null,
+    }));
+
+    try {
+      const balanceSol = await fetchSolBalance(publicKey);
+      setWallet(previous =>
+        previous.publicKey === publicKey ? { ...previous, balanceSol } : previous
+      );
+    } catch (error) {
+      console.error('Unable to fetch Solana wallet balance.', error);
+      setStatusMessage('Phantom connected, but the SOL balance could not be loaded. Check the RPC connection and try again.');
+    }
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem('symbiont_wallet_session', JSON.stringify(wallet));
-  }, [wallet]);
+    const provider = getPhantomProvider();
+    setWallet(previous => ({
+      ...previous,
+      isPhantomInstalled: provider !== null,
+    }));
+
+    if (!provider) return;
+
+    const handleAccountChanged = () => {
+      const publicKey = provider.publicKey?.toString();
+      if (publicKey) {
+        void updateConnectedWallet(publicKey);
+      } else {
+        setWallet(previous => ({
+          ...EMPTY_WALLET,
+          isPhantomInstalled: previous.isPhantomInstalled,
+        }));
+        setStatusMessage('Phantom wallet disconnected.');
+      }
+    };
+    const handleDisconnect = () => {
+      setWallet(previous => ({
+        ...EMPTY_WALLET,
+        isPhantomInstalled: previous.isPhantomInstalled,
+      }));
+      setStatusMessage('Phantom wallet disconnected.');
+    };
+
+    provider.on('accountChanged', handleAccountChanged);
+    provider.on('disconnect', handleDisconnect);
+
+    if (provider.publicKey) {
+      void updateConnectedWallet(provider.publicKey.toString());
+    }
+
+    return () => {
+      provider.off?.('accountChanged', handleAccountChanged);
+      provider.off?.('disconnect', handleDisconnect);
+    };
+  }, [getPhantomProvider, updateConnectedWallet]);
+
+  useEffect(() => {
+    if (!wallet.isConnected || !wallet.publicKey) return;
+    const publicKey = wallet.publicKey;
+
+    const refreshBalance = async () => {
+      try {
+        const balanceSol = await fetchSolBalance(publicKey);
+        setWallet(previous =>
+          previous.publicKey === publicKey ? { ...previous, balanceSol } : previous
+        );
+      } catch (error) {
+        console.error('Unable to refresh Solana wallet balance.', error);
+        setStatusMessage('Unable to refresh the SOL balance. The displayed balance may be out of date.');
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      void refreshBalance();
+    }, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, [wallet.isConnected, wallet.publicKey]);
 
   const clearStatusMessage = () => setStatusMessage(null);
-
-  const getPhantomProvider = (): PhantomProvider | null => {
-    if ('phantom' in window && window.phantom?.solana?.isPhantom) {
-      return window.phantom.solana;
-    }
-    if ('solana' in window && window.solana?.isPhantom) {
-      return window.solana;
-    }
-    return null;
-  };
 
   const connectPhantom = useCallback(async (): Promise<boolean> => {
     setIsConnecting(true);
     sound.playBip(700);
+
     try {
       const provider = getPhantomProvider();
       if (!provider) {
-        setStatusMessage('Phantom wallet not detected in browser. Launching Simulator Mode.');
-        // Fallback to simulator
-        connectSimulator();
-        setIsConnecting(false);
+        setStatusMessage('Phantom wallet was not detected. Install or enable the Phantom extension and try again.');
         return false;
       }
 
-      const resp = await provider.connect();
-      const pubKey = resp.publicKey.toString();
-
-      setWallet(prev => ({
-        ...prev,
-        isConnected: true,
-        publicKey: pubKey,
-        isSimulator: false,
-        balanceSol: 4.82, // typical active test balance
-      }));
-
+      const response = await provider.connect();
+      const publicKey = response.publicKey.toString();
+      setStatusMessage(`Connected to Phantom: ${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`);
+      await updateConnectedWallet(publicKey);
       sound.playGraft();
-      setStatusMessage(`Connected to Phantom: ${pubKey.slice(0, 4)}...${pubKey.slice(-4)}`);
-      setIsConnecting(false);
       return true;
-    } catch (err: unknown) {
-      console.warn('Phantom connection cancelled or failed', err);
-      setStatusMessage('Connection rejected by user.');
-      setIsConnecting(false);
+    } catch (error) {
+      console.warn('Phantom connection failed or was rejected.', error);
+      setStatusMessage('Phantom connection failed or was rejected.');
       return false;
+    } finally {
+      setIsConnecting(false);
     }
-  }, []);
-
-  const connectSimulator = () => {
-    sound.playGraft();
-    setWallet({
-      isConnected: true,
-      publicKey: '8xSymB10ntPuMp67pwEKpQGSJtjMFqKZ9KQanSqYX',
-      balanceSol: 14.85,
-      isPhantomInstalled: wallet.isPhantomInstalled,
-      isSimulator: true,
-      authSignature: null,
-      tokenBalances: {
-        '$SPORE': 48500,
-        '$CASH-CLAW': 12000,
-        '$STONK-HYPHA': 3400,
-        '$PIP-AGENT': 820,
-        '$POP-OAT': 1850,
-      },
-      totalBurntUsd: 1240.50,
-    });
-    setStatusMessage('Connected via Autonomous Colony Keystore.');
-  };
+  }, [getPhantomProvider, updateConnectedWallet]);
 
   const disconnect = async () => {
     sound.playBip(440);
     const provider = getPhantomProvider();
-    if (provider && !wallet.isSimulator) {
+
+    if (provider && wallet.isConnected) {
       try {
         await provider.disconnect();
-      } catch (err) {
-        console.warn('Phantom disconnect error', err);
+      } catch (error) {
+        console.error('Phantom disconnect failed.', error);
+        setStatusMessage('Could not disconnect from Phantom. Please try again in the wallet extension.');
+        return;
       }
     }
-    setWallet(prev => ({
-      ...DEFAULT_SIMULATOR_WALLET,
-      isPhantomInstalled: prev.isPhantomInstalled,
+
+    setWallet(previous => ({
+      ...EMPTY_WALLET,
+      isPhantomInstalled: previous.isPhantomInstalled,
     }));
     setStatusMessage('Wallet disconnected.');
   };
 
   const signAuthMessage = async (): Promise<string | null> => {
     if (!wallet.isConnected || !wallet.publicKey) {
-      setStatusMessage('Please connect your wallet first.');
+      setStatusMessage('Please connect your Phantom wallet first.');
+      return null;
+    }
+
+    const provider = getPhantomProvider();
+    if (!provider?.signMessage) {
+      setStatusMessage('This Phantom provider does not support message signing.');
+      return null;
+    }
+    if (provider.publicKey?.toString() !== wallet.publicKey) {
+      setStatusMessage('The connected Phantom account changed. Reconnect before signing.');
       return null;
     }
 
     sound.playBip(800);
-    const messageText = `SYMBIONT COLONY AUTHENTICATION\nEpoch: 628\nBotanist Address: ${wallet.publicKey}\nNonce: ${Date.now()}\nVerify ownership of mycelial parasitic roots.`;
+    const messageText = `SYMBIONT COLONY AUTHENTICATION\nAddress: ${wallet.publicKey}\nNonce: ${crypto.randomUUID()}\nSign in to Symbiont. This does not authorize a transaction.`;
 
     try {
-      const provider = getPhantomProvider();
-      if (provider && !wallet.isSimulator) {
-        const encodedMessage = new TextEncoder().encode(messageText);
-        const signed = await provider.signMessage(encodedMessage, 'utf8');
-        // Convert to hex string
-        const sigHex = Array.from(signed.signature)
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('')
-          .slice(0, 32);
-        
-        setWallet(prev => ({ ...prev, authSignature: `0x${sigHex}...` }));
-        sound.playGraft();
-        setStatusMessage('Authentication signature verified on Solana Mainnet!');
-        return `0x${sigHex}...`;
-      } else {
-        // Simulator signature
-        const mockSig = '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-        setWallet(prev => ({ ...prev, authSignature: mockSig }));
-        sound.playGraft();
-        setStatusMessage('Authentication signature verified via Colony Keystore!');
-        return mockSig;
-      }
-    } catch (err) {
-      console.warn('Signature rejected', err);
-      setStatusMessage('Signature request was rejected.');
+      const signed = await provider.signMessage(new TextEncoder().encode(messageText), 'utf8');
+      const signature = Array.from(signed.signature)
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
+
+      setWallet(previous =>
+        previous.publicKey === wallet.publicKey
+          ? { ...previous, authSignature: signature }
+          : previous
+      );
+      sound.playGraft();
+      setStatusMessage('Message signed by Phantom. The signature has not been verified by a server.');
+      return signature;
+    } catch (error) {
+      console.warn('Phantom message signing failed or was rejected.', error);
+      setStatusMessage('Message signing failed or was rejected.');
       return null;
     }
-  };
-
-  const executeTransferOrBurn = async (amountSol: number, hostSymbol?: string): Promise<boolean> => {
-    if (wallet.balanceSol < amountSol) {
-      setStatusMessage(`Insufficient SOL balance (${wallet.balanceSol.toFixed(3)} SOL available).`);
-      return false;
-    }
-
-    sound.playBurn();
-    setWallet(prev => ({
-      ...prev,
-      balanceSol: Math.max(0, prev.balanceSol - amountSol),
-      totalBurntUsd: prev.totalBurntUsd + (amountSol * 180 * 0.5), // est sol price $180
-    }));
-
-    if (hostSymbol) {
-      setStatusMessage(`Transaction confirmed: ${amountSol} SOL transferred, burning ${hostSymbol}!`);
-    } else {
-      setStatusMessage(`Transaction confirmed: ${amountSol} SOL deployed.`);
-    }
-
-    return true;
-  };
-
-  const addTokens = (symbol: string, amount: number) => {
-    setWallet(prev => ({
-      ...prev,
-      tokenBalances: {
-        ...prev.tokenBalances,
-        [symbol]: (prev.tokenBalances[symbol] || 0) + amount,
-      },
-    }));
   };
 
   return (
@@ -253,11 +280,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         wallet,
         isConnecting,
         connectPhantom,
-        connectSimulator,
         disconnect,
         signAuthMessage,
-        executeTransferOrBurn,
-        addTokens,
         openWalletModal,
         setOpenWalletModal,
         statusMessage,

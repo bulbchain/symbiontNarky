@@ -3,6 +3,7 @@ import { MEADOW_IMAGE_URL } from '../data/protocolData';
 import { sound } from '../utils/audio';
 import { SOCIAL_LINKS } from '../constants/links';
 import { PixelMushroomLogo } from './PixelMushroomLogo';
+import logo from '../assets/logo.png'; // Import the logo image
 
 interface HeroSectionProps {
   onGraftClick: () => void;
@@ -117,7 +118,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <img
             alt="16-bit retro alien meadow filled with luminous pink mushrooms and cyber biological spores"
             className="w-full h-full object-cover pixelated"
-            src={MEADOW_IMAGE_URL}
+            src={logo}
           />
 
           {/* Overlay Specimen Spore Badges - Positioned cleanly below top logo & text level */}

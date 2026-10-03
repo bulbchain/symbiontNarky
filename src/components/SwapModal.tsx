@@ -8,14 +8,6 @@ interface SwapModalProps {
   onClose: () => void;
   defaultHost?: string;
   defaultSpore?: string;
-  onSwapSuccess: (item: {
-    type: 'BUY';
-    tokenAmount: string;
-    tokenSymbol: string;
-    hostSymbol: string;
-    burntAmount: string;
-    burntSymbol: string;
-  }) => void;
 }
 
 export const SwapModal: React.FC<SwapModalProps> = ({
@@ -23,9 +15,8 @@ export const SwapModal: React.FC<SwapModalProps> = ({
   onClose,
   defaultHost = '$CASHCAT',
   defaultSpore = '$SPORE',
-  onSwapSuccess,
 }) => {
-  const { wallet, executeTransferOrBurn, addTokens, setOpenWalletModal } = useWallet();
+  const { wallet } = useWallet();
 
   const [inputAmount, setInputAmount] = useState<string>('0.5');
   const [selectedSpore, setSelectedSpore] = useState<string>(defaultSpore);
@@ -33,7 +24,6 @@ export const SwapModal: React.FC<SwapModalProps> = ({
   const [isEditingHost, setIsEditingHost] = useState<boolean>(false);
   const [customHostInput, setCustomHostInput] = useState<string>('');
   const [slippage, setSlippage] = useState<string>('1.5%');
-  const [isSwapping, setIsSwapping] = useState<boolean>(false);
 
   useEffect(() => {
     if (defaultHost) setSelectedHost(defaultHost);
@@ -62,44 +52,6 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     sound.playBip(700);
     setSelectedHost(symbol);
     setIsEditingHost(false);
-  };
-
-  const handleSwap = async () => {
-    if (!wallet.isConnected) {
-      sound.playBip(500);
-      setOpenWalletModal(true);
-      return;
-    }
-
-    if (solAmount <= 0) {
-      alert('Please enter a valid amount to swap.');
-      return;
-    }
-
-    setIsSwapping(true);
-    sound.playSwap();
-
-    const success = await executeTransferOrBurn(solAmount, selectedHost);
-    if (success) {
-      sound.playBurn();
-      addTokens(selectedSpore, sporeOutputAmount);
-
-      onSwapSuccess({
-        type: 'BUY',
-        tokenAmount: sporeOutputAmount.toLocaleString(),
-        tokenSymbol: selectedSpore,
-        hostSymbol: selectedHost,
-        burntAmount: burnHostAmount.toLocaleString(),
-        burntSymbol: selectedHost,
-      });
-
-      setTimeout(() => {
-        setIsSwapping(false);
-        onClose();
-      }, 500);
-    } else {
-      setIsSwapping(false);
-    }
   };
 
   return (
@@ -131,7 +83,12 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             <div className="flex justify-between text-[#5a3f46] mb-1">
               <span className="uppercase font-bold text-[10px]">You Pay (Source Asset)</span>
               <span>
-                Balance: {wallet.isConnected ? `${wallet.balanceSol.toFixed(3)} SOL` : '0.00 SOL'}
+                Balance:{' '}
+                {wallet.isConnected
+                  ? wallet.balanceSol === null
+                    ? 'Unavailable'
+                    : `${wallet.balanceSol.toFixed(3)} SOL`
+                  : '0.00 SOL'}
               </span>
             </div>
             <div className="flex border-2 border-[#1f182a] bg-[#faf0ff]">
@@ -229,8 +186,8 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           {/* Output: Symbiont Spore */}
           <div>
             <div className="flex justify-between text-[#5a3f46] mb-1">
-              <span className="uppercase font-bold text-[10px]">You Receive (Terminal Specimen)</span>
-              <span>Est. Output</span>
+              <span className="uppercase font-bold text-[10px]">Illustrative Output (Not Executable)</span>
+              <span>Preview Only</span>
             </div>
             <div className="flex border-2 border-[#1f182a] bg-[#faf0ff]">
               <input
@@ -259,8 +216,11 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             </div>
           </div>
 
-          {/* Route Simulation Breakdown */}
+          {/* Preview-only route math; no live quote or route is configured. */}
           <div className="bg-[#faf0ff] border-2 border-[#1f182a] p-3 space-y-1.5 text-[10px]">
+            <div className="text-[#b60059] font-bold border-b border-[#1f182a]/20 pb-1">
+              Preview only. No live pool quote or on-chain swap program is configured.
+            </div>
             <div className="flex justify-between border-b border-[#1f182a]/20 pb-1">
               <span className="text-[#5a3f46]">In-Between Host Soil Pool:</span>
               <span className="font-bold text-[#1f182a]">{selectedHost} Reserves</span>
@@ -295,17 +255,12 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           {/* Submit Button */}
           <button
             type="button"
-            disabled={isSwapping}
-            onClick={handleSwap}
+            disabled
             className="w-full py-3 bg-[#df1871] hover:bg-[#b60059] active:translate-x-0.5 active:translate-y-0.5 text-white font-['Space_Grotesk'] text-sm sm:text-base uppercase font-bold tracking-wider border-2 border-[#1f182a] shadow-[4px_4px_0px_#1f182a] transition-none flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[18px]">bolt</span>
             <span>
-              {isSwapping
-                ? `Routing through ${selectedHost} DBC...`
-                : !wallet.isConnected
-                ? 'Connect Wallet to Swap'
-                : `Execute Inter-Cellular Swap (SOL → ${selectedHost} → ${selectedSpore})`}
+              Swap Unavailable — On-Chain Router Not Configured
             </span>
           </button>
         </div>

@@ -26,14 +26,14 @@ export const SOCIAL_LINKS = {
  * Prioritizing modern AI Cat, AI Dog & Viral meme coins, moving Bonk to the end.
  */
 export const HOST_CONTRACT_ADDRESSES = {
-  CASHCAT: 'CA5HCaT1KzL98vPuMp9vP12kQzCa6xjnB7YaB1pPB97q',
-  STONK: 'SToNKCaTEKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYx',
-  PIPPIN: 'Dfh5DzRgSvvCFDoYc2ciTkMrbDfRKybA4So2gDEwpump',
-  POPCAT: '7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYpump',
-  GOAT: 'CzLSujWBLFsSjncfkh59rQDqJgCSwUiW3Q26Czehpump',
-  ACT: 'GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfNbYpump',
-  WIF: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm',
-  GIGA: '63LfDmNb3MQ8mw9MtZ2To9bEA2M71kZUUGq5KEJpump',
+  CASHCAT: '0x020bfC650A365f8BB26819deAAbF3E21291018b4',
+  STONK: '6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx',
+  PIPPIN: 'Dfh5DzRgSvvCFDoYc2ciTkMrbDfRKybA4SoFbPmApump',
+  POPCAT: '7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr',
+  GOAT: 'CzLSujWBLFsSjncfkh59rUFqvafWcY5tzedWJSuypump',
+  ACT: 'GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump',
+  WIF: '5tCju6YNxHq5zrA6tGndr6F7TK42mpUFmeE31cSFpump',
+  GIGA: '63LfDmNb3MQ8mw9MtZ2To9bEA2M71kZUUGq5tiJxcqj9',
   BONK: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
 } as const;
 
