@@ -126,12 +126,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               sound.playBip(950);
               onSelectSpore('$SPORE');
             }}
-            className="absolute bottom-3 left-3 bg-[#ffffff] border-2 border-[#1f182a] px-2.5 py-1 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#ffd9e1] z-10"
+            className="absolute bottom-9 left-1 bg-[#ffffff] border-2 border-[#1f182a] px-2.5 py-1 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#ffd9e1] z-10"
             title="Click to view $SPORE"
           >
             <span className="w-2 h-2 rounded-full bg-[#b60059] inline-block animate-ping"></span>
             <span className="font-bold text-[#b60059]">$SPORE</span>
-            <span className="text-[#006d3d] font-bold">+42.8%</span>
+            <span className="text-[#006d3d] font-bold">+22.8%</span>
           </div>
 
           <div
@@ -139,7 +139,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               sound.playBurn();
               onSelectSpore('$HYPHA');
             }}
-            className="absolute top-3 right-3 bg-[#ffffff] border-2 border-[#1f182a] px-2 py-0.5 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#ffd9e1]"
+            className="absolute top-9 right-1 bg-[#ffffff] border-2 border-[#1f182a] px-2 py-0.5 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#ffd9e1]"
             title="Burning Mycelium"
           >
             <span className="w-2 h-2 rounded-full bg-[#5affa3] inline-block"></span>
@@ -152,7 +152,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               sound.playBip(700);
               onSelectSpore('$MYCO');
             }}
-            className="absolute top-1/2 left-3 bg-[#ffffff] border-2 border-[#1f182a] px-2 py-0.5 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#f0e3fd]"
+            className="absolute top-1/2 left-1 bg-[#ffffff] border-2 border-[#1f182a] px-2 py-0.5 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#f0e3fd]"
             title="Host: $CASHCAT"
           >
             <span className="w-2 h-2 bg-[#7658f8] inline-block"></span>
@@ -165,7 +165,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               sound.playGraft();
               onSelectSpore('$BLOOM');
             }}
-            className="absolute bottom-3 right-3 bg-[#ffffff] border-2 border-[#1f182a] px-2 py-0.5 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#ffd9e1]"
+            className="absolute bottom-24 right-1 bg-[#ffffff] border-2 border-[#1f182a] px-2 py-0.5 shadow-[2px_2px_0px_#1f182a] font-mono text-[9px] sm:text-[10px] uppercase flex items-center gap-1.5 cursor-pointer hover:bg-[#ffd9e1]"
             title="Specimen Live"
           >
             <span className="w-2 h-2 rounded-full bg-[#006d3d] inline-block animate-pulse"></span>
