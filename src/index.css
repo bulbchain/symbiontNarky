@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Space Mono', monospace;
+    background-color: #fef7ff;
+    color: #1f182a;
+  }
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f0e3fd;
+  border: 1px solid #1f182a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f182a;
+}
+
+/* Neo-arcade brutalist utilities */
+.arcade-card {
+  border: 2px solid #1f182a;
+  box-shadow: 4px 4px 0px #1f182a;
+}
+
+.arcade-card-lg {
+  border: 2px solid #1f182a;
+  box-shadow: 6px 6px 0px #1f182a;
+}
+
+.arcade-btn {
+  border: 2px solid #1f182a;
+  box-shadow: 3px 3px 0px #1f182a;
+  transition: transform 70ms ease, box-shadow 70ms ease;
+}
+
+.arcade-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #1f182a;
+}
+
+.arcade-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #1f182a;
+}
+
+.arcade-input {
+  border: 2px solid #1f182a;
+  transition: border-color 100ms ease;
+}
+
+.arcade-input:focus {
+  outline: none;
+  border-color: #df1871;
+  box-shadow: 0 0 0 1px #df1871;
+}
+
+/* Keyframes for subtle retro blinks */
+@keyframes bio-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-bio-pulse {
+  animation: bio-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
