@@ -1,8 +1,8 @@
 export const SITE_NAME = 'Symbiont';
 export const SITE_TAGLINE = 'Parasitic Cyber-Biological Token Protocol';
 
-export const PROTOCOL_CA = '';
-export const PROTOCOL_CA_SHORT = '';
+export const PROTOCOL_CA = 'EtqxMos9MqHZTeDb3i2GNA3fahFRZDm2c7zsAchtpump';
+export const PROTOCOL_CA_SHORT = 'EtqxMos9MqHZTeDb3i2GNA3fahFRZDm2c7zsAchtpump';
 
 /**
  * Pump.fun URL for official Symbiont protocol bonding curve
